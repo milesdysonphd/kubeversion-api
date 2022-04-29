@@ -1,4 +1,4 @@
-module github.com/milesdysonphd/kubeversion-api
+module github.com/superbased/kubeversion-api
 
 go 1.18
 
