@@ -6,7 +6,8 @@ COPY go.sum go.sum
 RUN go mod download
 
 COPY main.go main.go
-COPY pkg/ pkg
+COPY pkg/ pkg/
+COPY controllers/ controllers/
 
 RUN GOOS=linux GOARCH=amd64 go build -o kubeversion-api main.go
 
