@@ -9,4 +9,4 @@ RUN go build -o kubeversion-api main.go
 
 FROM golang:1.18-alpine
 COPY --from=builder /app/kuberversion-api .
-CMD["/kuberversion-api"]
+CMD ["/kuberversion-api"]
