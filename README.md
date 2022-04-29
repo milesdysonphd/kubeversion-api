@@ -5,7 +5,7 @@ This is a simple API for quickly getting version information related to Kubernet
 
 ## Endpoints
 
-### `GET /versions`
+### `GET /v1/versions`
 Get all available versions.
 
 #### Query Parameters
@@ -18,7 +18,7 @@ Get all available versions.
 
 **Query**
 ```
-https://api.kubeversion.com/versions?major=1&minor=21
+https://api.kubeversion.com/v1/versions?major=1&minor=21
 ```
 **Output**
 ```json
@@ -42,7 +42,7 @@ https://api.kubeversion.com/versions?major=1&minor=21
 ```
 
 
-### `GET /versions/latest`
+### `GET /v1/versions/latest`
 Returns the latest version.
 
 #### Query Parameters
@@ -55,7 +55,7 @@ Returns the latest version.
 
 **Query**
 ```
-https://api.kubeversion.com/versions/latest?major=1&minor=21
+https://api.kubeversion.com/v1/versions/latest?major=1&minor=21
 ```
 **Output**
 ```json
@@ -66,7 +66,7 @@ https://api.kubeversion.com/versions/latest?major=1&minor=21
 
 **Query**
 ```
-https://api.kubeversion.com/versions/latest?major=1
+https://api.kubeversion.com/v1/versions/latest?major=1
 ```
 **Output**
 ```json
