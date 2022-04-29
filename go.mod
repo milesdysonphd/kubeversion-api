@@ -1,4 +1,4 @@
-module github.com/rackfleet/kubeversion-api
+module github.com/milesdysonphd/kubeversion-api
 
 go 1.18
 

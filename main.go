@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/masterminds/semver"
-	"github.com/rackfleet/kubeversion-api/pkg/gh"
+	"github.com/milesdysonphd/kubeversion-api/pkg/gh"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"log"
