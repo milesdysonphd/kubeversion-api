@@ -56,7 +56,9 @@ func (v *VersionsController) getVersions(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(map[string]interface{}{
-		"versions": retVersions,
+		"data": map[string]interface{}{
+			"versions": retVersions,
+		},
 	})
 }
 
@@ -84,7 +86,8 @@ func (v *VersionsController) getLatestVersion(c *fiber.Ctx) error {
 		})
 	}
 
+	releases := utils.BuildVersionResponse(retVersions)
 	return c.JSON(map[string]interface{}{
-		"version": retVersions[len(retVersions)-1],
+		"data": releases[len(releases)-1],
 	})
 }
