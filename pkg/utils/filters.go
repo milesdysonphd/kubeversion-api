@@ -3,9 +3,13 @@ package utils
 import (
 	"fmt"
 	"github.com/masterminds/semver"
+	"github.com/samber/lo"
+	"github.com/superbased/kubeversion-api/pkg/gh"
+	"golang.org/x/exp/maps"
+	"sort"
 )
 
-func FilterVersions(versions []*semver.Version, major, minor string) ([]*semver.Version, error) {
+func FilterVersions(versions map[string]*gh.VersionInfo, major, minor string) ([]*semver.Version, error) {
 	var retVersions []*semver.Version
 	if len(major) != 0 {
 		filterConstraint := fmt.Sprintf("~%s", major)
@@ -16,13 +20,18 @@ func FilterVersions(versions []*semver.Version, major, minor string) ([]*semver.
 		if err != nil {
 			return nil, err
 		}
-		for _, v := range versions {
-			if semverConstraint.Check(v) {
-				retVersions = append(retVersions, v)
+		// filter based on constraint
+		retVersions = lo.FilterMap[*gh.VersionInfo, *semver.Version](maps.Values(versions), func(x *gh.VersionInfo, _ int) (*semver.Version, bool) {
+			if semverConstraint.Check(x.SemVerVersion) {
+				return x.SemVerVersion, true
 			}
-		}
+			return nil, false
+		})
 	} else {
-		retVersions = versions
+		retVersions = lo.Map[*gh.VersionInfo, *semver.Version](maps.Values(versions), func(x *gh.VersionInfo, _ int) *semver.Version {
+			return x.SemVerVersion
+		})
 	}
+	sort.Sort(semver.Collection(retVersions))
 	return retVersions, nil
 }

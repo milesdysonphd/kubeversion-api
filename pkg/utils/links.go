@@ -6,6 +6,9 @@ import (
 )
 
 var (
+	bins = []string{
+		"kubectl",
+	}
 	platformArch = map[string][]string{
 		"darwin": {
 			"amd64",
@@ -27,8 +30,8 @@ var (
 )
 
 type Release struct {
-	Version   string         `json:"version"`
-	Downloads []DownloadLink `json:"downloads"`
+	Version   string                    `json:"version"`
+	Downloads map[string][]DownloadLink `json:"downloads"`
 }
 
 type DownloadLink struct {
@@ -39,20 +42,50 @@ type DownloadLink struct {
 	ChecksumURL  string `json:"checksumUrl"`
 }
 
-func BuildVersionResponse(versions []*semver.Version) []Release {
+func BuildVersionsResponse(versions []*semver.Version) []Release {
 	releases := make([]Release, len(versions))
 	for _, v := range versions {
 		tmp := Release{
 			Version:   v.String(),
-			Downloads: []DownloadLink{},
+			Downloads: map[string][]DownloadLink{},
 		}
 		for k, p := range platformArch {
-			binName := "kubectl"
-			if k == "windows" {
-				binName = "kubectl.exe"
+			for _, b := range bins {
+				binName := b
+				if k == "windows" {
+					binName = fmt.Sprintf("%s.exe", b)
+				}
+
+				for _, arch := range p {
+					tmp.Downloads[k] = append(tmp.Downloads[k], DownloadLink{
+						Binary:       "kubectl",
+						Platform:     k,
+						Architecture: arch,
+						URL:          fmt.Sprintf("https://dl.k8s.io/v%s/bin/%s/%s/%s", v.String(), k, arch, binName),
+						ChecksumURL:  fmt.Sprintf("https://dl.k8s.io/v%s/bin/%s/%s/%s.sha256", v.String(), k, arch, binName),
+					})
+				}
 			}
+		}
+		releases = append(releases, tmp)
+	}
+	return releases
+}
+
+func BuildVersionResponse(v *semver.Version) Release {
+	ret := Release{
+		Version:   v.String(),
+		Downloads: map[string][]DownloadLink{},
+	}
+	for k, p := range platformArch {
+		for _, b := range bins {
+			binName := b
+			if k == "windows" {
+				binName = fmt.Sprintf("%s.exe", b)
+			}
+
 			for _, arch := range p {
-				tmp.Downloads = append(tmp.Downloads, DownloadLink{
+				ret.Downloads[k] = append(ret.Downloads[k], DownloadLink{
 					Binary:       "kubectl",
 					Platform:     k,
 					Architecture: arch,
@@ -61,7 +94,6 @@ func BuildVersionResponse(versions []*semver.Version) []Release {
 				})
 			}
 		}
-		releases = append(releases, tmp)
 	}
-	return releases
+	return ret
 }

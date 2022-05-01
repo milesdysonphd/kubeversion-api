@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 	"github.com/gofiber/fiber/v2"
+	"github.com/masterminds/semver"
 	"github.com/superbased/kubeversion-api/pkg/gh"
 	"github.com/superbased/kubeversion-api/pkg/utils"
 	"go.uber.org/zap"
@@ -29,6 +30,7 @@ func (v *VersionsController) Mount(a *fiber.App) {
 	v1Endpoints := a.Group("/v1/versions")
 	v1Endpoints.Get("/", v.getVersions)
 	v1Endpoints.Get("/latest", v.getLatestVersion)
+	v1Endpoints.Get("/:version", v.getVersion)
 }
 
 func (v *VersionsController) getVersions(c *fiber.Ctx) error {
@@ -62,6 +64,31 @@ func (v *VersionsController) getVersions(c *fiber.Ctx) error {
 	})
 }
 
+func (v *VersionsController) getVersion(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(c.Context(), time.Second*10)
+	defer cancel()
+	version := c.Params("version")
+	parsedVersion, err := semver.NewVersion(version)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		return c.JSON(map[string]string{
+			"message": "unable to parse provided version",
+		})
+	}
+	retVersion, exists := v.versionService.GetVersion(ctx, parsedVersion)
+	if !exists {
+		c.Status(http.StatusNotFound)
+		return c.JSON(map[string]string{
+			"message": "unable to find specified version",
+		})
+	}
+
+	ret := utils.BuildVersionResponse(retVersion.SemVerVersion)
+	return c.JSON(map[string]interface{}{
+		"data": ret,
+	})
+}
+
 func (v *VersionsController) getLatestVersion(c *fiber.Ctx) error {
 	major := c.Query("major")
 	minor := c.Query("minor")
@@ -86,7 +113,7 @@ func (v *VersionsController) getLatestVersion(c *fiber.Ctx) error {
 		})
 	}
 
-	releases := utils.BuildVersionResponse(retVersions)
+	releases := utils.BuildVersionsResponse(retVersions)
 	return c.JSON(map[string]interface{}{
 		"data": releases[len(releases)-1],
 	})

@@ -6,16 +6,20 @@ import (
 	"github.com/google/go-github/v43/github"
 	"github.com/masterminds/semver"
 	"go.uber.org/zap"
-	"sort"
 	"time"
 )
 
 type VersionService struct {
 	client   *github.Client
-	versions []*semver.Version
+	versions map[string]*VersionInfo
 	logger   *zap.Logger
 	owner    string
 	repo     string
+}
+
+type VersionInfo struct {
+	SemVerVersion *semver.Version
+	Name          string
 }
 
 func NewVersionService(logger *zap.Logger, owner, repo string) (*VersionService, error) {
@@ -30,14 +34,15 @@ func NewVersionService(logger *zap.Logger, owner, repo string) (*VersionService,
 	}
 
 	return &VersionService{
-		client: github.NewClient(nil),
-		logger: logger.Named("version_service"),
-		owner:  owner,
-		repo:   repo,
+		client:   github.NewClient(nil),
+		logger:   logger.Named("version_service"),
+		owner:    owner,
+		repo:     repo,
+		versions: map[string]*VersionInfo{},
 	}, nil
 }
 
-func (v *VersionService) GetVersions(ctx context.Context) ([]*semver.Version, error) {
+func (v *VersionService) GetVersions(ctx context.Context) (map[string]*VersionInfo, error) {
 	if len(v.versions) == 0 {
 		if err := v.RefreshVersions(ctx); err != nil {
 			return nil, err
@@ -46,25 +51,37 @@ func (v *VersionService) GetVersions(ctx context.Context) ([]*semver.Version, er
 	return v.versions, nil
 }
 
+func (v *VersionService) GetVersion(ctx context.Context, ver *semver.Version) (*VersionInfo, bool) {
+	if len(v.versions) == 0 {
+		if err := v.RefreshVersions(ctx); err != nil {
+			return nil, false
+		}
+	}
+	retVer, exists := v.versions[ver.String()]
+	return retVer, exists
+}
+
 func (v *VersionService) RefreshVersions(ctx context.Context) error {
 	tags, err := v.getVersionTags(ctx)
 	if err != nil {
 		return err
 	}
-	vs := make([]*semver.Version, len(tags))
-	for i, r := range tags {
-		v, err := semver.NewVersion(r)
+	for _, r := range tags {
+		sv, err := semver.NewVersion(r)
 		if err != nil {
 			continue
 		}
-		vs[i] = v
+		v.versions[sv.String()] = &VersionInfo{
+			SemVerVersion: sv,
+			Name:          r,
+		}
 	}
-	sort.Sort(semver.Collection(vs))
-	v.versions = vs
+	v.logger.Info("versions refresh complete")
 	return nil
 }
 
 func (v *VersionService) StartRefresh(interval time.Duration, exit chan struct{}) {
+	v.logger.Info("starting refresh process")
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
@@ -75,6 +92,7 @@ func (v *VersionService) StartRefresh(interval time.Duration, exit chan struct{}
 				v.logger.Error("unable to refresh tag cache", zap.Error(err))
 			}
 		case <-exit:
+			v.logger.Info("refresh process exiting")
 			return
 		}
 	}
