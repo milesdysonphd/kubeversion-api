@@ -2,7 +2,7 @@ package v1
 
 import (
 	"context"
-	"github.com/gofiber/fiber/v2"
+	"github.com/labstack/echo/v4"
 	"github.com/masterminds/semver"
 	"github.com/superbased/kubeversion-api/pkg/gh"
 	"github.com/superbased/kubeversion-api/pkg/utils"
@@ -26,24 +26,23 @@ func NewVersionsController(versionService *gh.VersionService, logger *zap.Logger
 }
 
 // Mount is responsible for mounting the /versions endpoints
-func (v *VersionsController) Mount(a *fiber.App) {
+func (v *VersionsController) Mount(a *echo.Echo) {
 	v1Endpoints := a.Group("/v1/versions")
-	v1Endpoints.Get("/", v.getVersions)
-	v1Endpoints.Get("/latest", v.getLatestVersion)
-	v1Endpoints.Get("/:version", v.getVersion)
+	v1Endpoints.GET("/", v.getVersions)
+	v1Endpoints.GET("/latest", v.getLatestVersion)
+	v1Endpoints.GET("/:version", v.getVersion)
 }
 
-func (v *VersionsController) getVersions(c *fiber.Ctx) error {
-	major := c.Query("major")
-	minor := c.Query("minor")
+func (v *VersionsController) getVersions(c echo.Context) error {
+	major := c.QueryParam("major")
+	minor := c.QueryParam("minor")
 
-	ctx, cancel := context.WithTimeout(c.Context(), time.Second*10)
+	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Second*10)
 	defer cancel()
 	versions, err := v.versionService.GetVersions(ctx)
 	if err != nil {
 		v.logger.Error("error getting versions", zap.Error(err))
-		c.Status(http.StatusInternalServerError)
-		return c.JSON(map[string]string{
+		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"message": "something went wrong",
 		})
 	}
@@ -51,55 +50,51 @@ func (v *VersionsController) getVersions(c *fiber.Ctx) error {
 	retVersions, err := utils.FilterVersions(versions, major, minor)
 	if err != nil {
 		v.logger.Error("error filtering versions", zap.Error(err))
-		c.Status(http.StatusBadRequest)
-		return c.JSON(map[string]string{
+		return c.JSON(http.StatusBadRequest, map[string]string{
 			"message": "unable to build version filter",
 		})
 	}
 
-	return c.JSON(map[string]interface{}{
+	return c.JSON(http.StatusOK, map[string]interface{}{
 		"data": map[string]interface{}{
 			"versions": retVersions,
 		},
 	})
 }
 
-func (v *VersionsController) getVersion(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(c.Context(), time.Second*10)
+func (v *VersionsController) getVersion(c echo.Context) error {
+	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Second*10)
 	defer cancel()
-	version := c.Params("version")
+	version := c.QueryParam("version")
 	parsedVersion, err := semver.NewVersion(version)
 	if err != nil {
-		c.Status(http.StatusBadRequest)
-		return c.JSON(map[string]string{
+		return c.JSON(http.StatusBadRequest, map[string]string{
 			"message": "unable to parse provided version",
 		})
 	}
 	retVersion, exists := v.versionService.GetVersion(ctx, parsedVersion)
 	if !exists {
-		c.Status(http.StatusNotFound)
-		return c.JSON(map[string]string{
+		return c.JSON(http.StatusNotFound, map[string]string{
 			"message": "unable to find specified version",
 		})
 	}
 
 	ret := utils.BuildVersionResponse(retVersion.SemVerVersion)
-	return c.JSON(map[string]interface{}{
+	return c.JSON(http.StatusOK, map[string]interface{}{
 		"data": ret,
 	})
 }
 
-func (v *VersionsController) getLatestVersion(c *fiber.Ctx) error {
-	major := c.Query("major")
-	minor := c.Query("minor")
+func (v *VersionsController) getLatestVersion(c echo.Context) error {
+	major := c.QueryParam("major")
+	minor := c.QueryParam("minor")
 
-	ctx, cancel := context.WithTimeout(c.Context(), time.Second*10)
+	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Second*10)
 	defer cancel()
 	versions, err := v.versionService.GetVersions(ctx)
 	if err != nil {
 		v.logger.Error("error getting versions", zap.Error(err))
-		c.Status(http.StatusInternalServerError)
-		return c.JSON(map[string]string{
+		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"message": "something went wrong",
 		})
 	}
@@ -107,14 +102,13 @@ func (v *VersionsController) getLatestVersion(c *fiber.Ctx) error {
 	retVersions, err := utils.FilterVersions(versions, major, minor)
 	if err != nil {
 		v.logger.Error("error filtering versions", zap.Error(err))
-		c.Status(http.StatusBadRequest)
-		return c.JSON(map[string]string{
+		return c.JSON(http.StatusBadRequest, map[string]string{
 			"message": "unable to build version filter",
 		})
 	}
 
 	releases := utils.BuildVersionsResponse(retVersions)
-	return c.JSON(map[string]interface{}{
+	return c.JSON(http.StatusOK, map[string]interface{}{
 		"data": releases[len(releases)-1],
 	})
 }
