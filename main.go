@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/getsentry/sentry-go"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
@@ -10,6 +11,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"log"
+	"os"
 	"time"
 )
 
@@ -21,6 +23,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// sentry
+	sentryDSN, ok := os.LookupEnv("SENTRY_DSN")
+	if !ok {
+		logger.Fatal("SENTRY_DSN environment variable is missing")
+	}
+	if err := sentry.Init(sentry.ClientOptions{
+		Dsn: sentryDSN,
+	}); err != nil {
+		logger.Fatal("unable to initialize sentry", zap.Error(err))
+	}
+	defer sentry.Flush(2 * time.Second)
 
 	// fiber framework
 	app := fiber.New(fiber.Config{
@@ -57,6 +71,7 @@ func main() {
 		})
 	})
 
+	sentry.CaptureMessage("kubeversion api is starting")
 	if err := app.Listen(":8080"); err != nil {
 		logger.Error("error running server", zap.Error(err))
 	}
