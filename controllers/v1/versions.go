@@ -26,11 +26,11 @@ func NewVersionsController(versionService *gh.VersionService, logger *zap.Logger
 }
 
 // Mount is responsible for mounting the /versions endpoints
-func (v *VersionsController) Mount(a *echo.Echo) {
-	v1Endpoints := a.Group("/v1/versions")
-	v1Endpoints.GET("/", v.getVersions)
-	v1Endpoints.GET("/latest", v.getLatestVersion)
-	v1Endpoints.GET("/:version", v.getVersion)
+func (v *VersionsController) Mount(e *echo.Echo) {
+	g := e.Group("/v1/versions")
+	g.GET("", v.getVersions)
+	g.GET("/latest", v.getLatestVersion)
+	g.GET("/:version", v.getVersion)
 }
 
 func (v *VersionsController) getVersions(c echo.Context) error {

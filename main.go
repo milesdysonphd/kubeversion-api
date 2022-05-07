@@ -25,17 +25,19 @@ func main() {
 	}
 
 	// sentry
-	sentryDSN, ok := os.LookupEnv("SENTRY_DSN")
-	if !ok {
-		logger.Fatal("SENTRY_DSN environment variable is missing")
+	if len(os.Getenv("LOCAL_MODE")) == 0 {
+		sentryDSN, ok := os.LookupEnv("SENTRY_DSN")
+		if !ok {
+			logger.Fatal("SENTRY_DSN environment variable is missing")
+		}
+		if err := sentry.Init(sentry.ClientOptions{
+			Dsn:              sentryDSN,
+			TracesSampleRate: 0.2,
+		}); err != nil {
+			logger.Fatal("unable to initialize sentry", zap.Error(err))
+		}
+		defer sentry.Flush(2 * time.Second)
 	}
-	if err := sentry.Init(sentry.ClientOptions{
-		Dsn:              sentryDSN,
-		TracesSampleRate: 0.2,
-	}); err != nil {
-		logger.Fatal("unable to initialize sentry", zap.Error(err))
-	}
-	defer sentry.Flush(2 * time.Second)
 
 	// echo framework
 	e := echo.New()
