@@ -29,8 +29,8 @@ func NewVersionsController(versionService *gh.VersionService, logger *zap.Logger
 func (v *VersionsController) Mount(e *echo.Echo) {
 	g := e.Group("/v1/versions")
 	g.GET("", v.getVersions)
-	g.GET("/latest", v.getLatestVersion)
 	g.GET("/:version", v.getVersion)
+	g.GET("/latest", v.getLatestVersion)
 }
 
 func (v *VersionsController) getVersions(c echo.Context) error {
@@ -65,7 +65,7 @@ func (v *VersionsController) getVersions(c echo.Context) error {
 func (v *VersionsController) getVersion(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Second*10)
 	defer cancel()
-	version := c.QueryParam("version")
+	version := c.Param("version")
 	parsedVersion, err := semver.NewVersion(version)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
