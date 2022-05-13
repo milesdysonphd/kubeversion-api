@@ -3,10 +3,11 @@ module github.com/superbased/kubeversion-api
 go 1.18
 
 require (
-	github.com/getsentry/sentry-go v0.13.0
 	github.com/google/go-github/v43 v43.0.0
 	github.com/labstack/echo/v4 v4.5.0
 	github.com/masterminds/semver v1.5.0
+	github.com/newrelic/go-agent/v3 v3.15.2
+	github.com/newrelic/go-agent/v3/integrations/nrecho-v4 v1.0.2
 	github.com/samber/lo v1.19.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17
@@ -15,6 +16,7 @@ require (
 require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
+	github.com/golang/protobuf v1.3.3 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/labstack/gommon v0.3.0 // indirect
 	github.com/mattn/go-colorable v0.1.11 // indirect
@@ -28,4 +30,6 @@ require (
 	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
+	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55 // indirect
+	google.golang.org/grpc v1.27.0 // indirect
 )

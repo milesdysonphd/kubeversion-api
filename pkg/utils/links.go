@@ -5,6 +5,12 @@ import (
 	"github.com/masterminds/semver"
 )
 
+const (
+	baseRepo      = "https://github.com/kubernetes/kubernetes"
+	baseShortUrl  = "https://git.k8s.io/kubernetes"
+	changelogPath = "CHANGELOG/CHANGELOG"
+)
+
 var (
 	bins = []string{
 		"kubectl",
@@ -31,6 +37,7 @@ var (
 
 type Release struct {
 	Version   string                    `json:"version"`
+	Changelog string                    `json:"changelog"`
 	Downloads map[string][]DownloadLink `json:"downloads"`
 }
 
@@ -47,6 +54,7 @@ func BuildVersionsResponse(versions []*semver.Version) []Release {
 	for _, v := range versions {
 		tmp := Release{
 			Version:   v.String(),
+			Changelog: fmt.Sprintf("%s/%s-%v.%v.md", baseShortUrl, changelogPath, v.Major(), v.Minor()),
 			Downloads: map[string][]DownloadLink{},
 		}
 		for k, p := range platformArch {
@@ -75,6 +83,7 @@ func BuildVersionsResponse(versions []*semver.Version) []Release {
 func BuildVersionResponse(v *semver.Version) Release {
 	ret := Release{
 		Version:   v.String(),
+		Changelog: fmt.Sprintf("%s/%s-%v.%v.md", baseShortUrl, changelogPath, v.Major(), v.Minor()),
 		Downloads: map[string][]DownloadLink{},
 	}
 	for k, p := range platformArch {

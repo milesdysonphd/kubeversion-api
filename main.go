@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
-	"github.com/getsentry/sentry-go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/newrelic/go-agent/v3/integrations/nrecho-v4"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	v1 "github.com/superbased/kubeversion-api/controllers/v1"
 	"github.com/superbased/kubeversion-api/pkg/gh"
 	"go.uber.org/zap"
@@ -24,23 +25,26 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// sentry
-	if len(os.Getenv("LOCAL_MODE")) == 0 {
-		sentryDSN, ok := os.LookupEnv("SENTRY_DSN")
-		if !ok {
-			logger.Fatal("SENTRY_DSN environment variable is missing")
-		}
-		if err := sentry.Init(sentry.ClientOptions{
-			Dsn:              sentryDSN,
-			TracesSampleRate: 0.2,
-		}); err != nil {
-			logger.Fatal("unable to initialize sentry", zap.Error(err))
-		}
-		defer sentry.Flush(2 * time.Second)
-	}
-
 	// echo framework
 	e := echo.New()
+
+	// new relic
+	if len(os.Getenv("LOCAL_MODE")) == 0 {
+		newRelicKey, ok := os.LookupEnv("NEW_RELIC_KEY")
+		if !ok {
+			logger.Fatal("NEW_RELIC_KEY environment variable is missing")
+		}
+		app, err := newrelic.NewApplication(
+			newrelic.ConfigAppName("KubeVersion API"),
+			newrelic.ConfigLicense(newRelicKey),
+			newrelic.ConfigDistributedTracerEnabled(true),
+		)
+		if err != nil {
+			logger.Fatal("error instantiating new relic", zap.Error(err))
+		}
+		e.Use(nrecho.Middleware(app))
+	}
+
 	e.HideBanner = true
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestID())
