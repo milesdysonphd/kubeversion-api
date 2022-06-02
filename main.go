@@ -71,7 +71,7 @@ func main() {
 	// mount a default endpoint
 	e.GET("/", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{
-			"message": "hello there",
+			"message": "hello there, learn more at https://kubeversion.com",
 		})
 	})
 
