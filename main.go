@@ -48,6 +48,12 @@ func main() {
 	e.HideBanner = true
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestID())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{
+			"http://localhost:5173",
+			"https://kubeversion.com",
+		},
+	}))
 
 	// exit channel
 	exit := make(chan struct{}, 1)
